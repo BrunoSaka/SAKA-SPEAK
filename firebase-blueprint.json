@@ -1,0 +1,177 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with practice stats",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The user's authentication UID"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User's display name"
+        },
+        "email": {
+          "type": "string",
+          "description": "User's Google email"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Account registration timestamp. Client must submit FieldValue.serverTimestamp()."
+        },
+        "totalPractices": {
+          "type": "integer",
+          "description": "Number of speech sessions completed"
+        }
+      },
+      "required": [
+        "userId",
+        "displayName",
+        "email",
+        "createdAt"
+      ]
+    },
+    "PracticeSession": {
+      "title": "PracticeSession",
+      "description": "Public speaking practice recording and AI evaluation results",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Document ID"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner UID"
+        },
+        "topicTitle": {
+          "type": "string",
+          "description": "Topic or speech prompt practiced"
+        },
+        "category": {
+          "type": "string",
+          "description": "Topic category or speaking mode"
+        },
+        "durationSeconds": {
+          "type": "integer",
+          "description": "Duration of practice in seconds"
+        },
+        "transcript": {
+          "type": "string",
+          "description": "Recognized speech transcript"
+        },
+        "overallScore": {
+          "type": "integer",
+          "description": "Overall score 0-100"
+        },
+        "scoreLanguage": {
+          "type": "integer",
+          "description": "Indonesian language score 0-100"
+        },
+        "scoreArticulation": {
+          "type": "integer",
+          "description": "Articulation score 0-100"
+        },
+        "scoreTone": {
+          "type": "integer",
+          "description": "Tone and intonation score 0-100"
+        },
+        "scoreImprovisation": {
+          "type": "integer",
+          "description": "Improvisation score 0-100"
+        },
+        "scoreInsight": {
+          "type": "integer",
+          "description": "Insight and depth score 0-100"
+        },
+        "feedbackSummary": {
+          "type": "string",
+          "description": "Summary feedback in Indonesian"
+        },
+        "feedbackStrengths": {
+          "type": "array",
+          "description": "List of key strengths"
+        },
+        "feedbackImprovements": {
+          "type": "array",
+          "description": "List of areas for improvement"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp. Client must submit FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "topicTitle",
+        "category",
+        "durationSeconds",
+        "transcript",
+        "overallScore",
+        "createdAt"
+      ]
+    },
+    "SavedTopic": {
+      "title": "SavedTopic",
+      "description": "User bookmarked topics or speaking prompts",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Document ID"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner UID"
+        },
+        "title": {
+          "type": "string",
+          "description": "Topic title"
+        },
+        "category": {
+          "type": "string",
+          "description": "Topic category"
+        },
+        "quote": {
+          "type": "string",
+          "description": "Topic quote or spark description"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Saved timestamp. Client must submit FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "title",
+        "category",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "User profile collection isolated by user ID"
+    },
+    "/users/{userId}/practices/{practiceId}": {
+      "schema": {
+        "$ref": "#/entities/PracticeSession"
+      },
+      "description": "User speech practice history and AI evaluations"
+    },
+    "/users/{userId}/saved_topics/{topicId}": {
+      "schema": {
+        "$ref": "#/entities/SavedTopic"
+      },
+      "description": "User bookmarked topics"
+    }
+  }
+}

@@ -1,0 +1,118 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+             data.email is string && data.email.size() >= 3 && data.email.size() <= 150 &&
+             (!('totalPractices' in data) || data.totalPractices is int);
+    }
+
+    function isValidPracticeSession(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.topicTitle is string && data.topicTitle.size() >= 1 && data.topicTitle.size() <= 500 &&
+             data.category is string && data.category.size() >= 1 && data.category.size() <= 100 &&
+             data.durationSeconds is int && data.durationSeconds >= 0 && data.durationSeconds <= 7200 &&
+             data.transcript is string && data.transcript.size() <= 50000 &&
+             data.overallScore is int && data.overallScore >= 0 && data.overallScore <= 100 &&
+             (!('scoreLanguage' in data) || (data.scoreLanguage is int && data.scoreLanguage >= 0 && data.scoreLanguage <= 100)) &&
+             (!('scoreArticulation' in data) || (data.scoreArticulation is int && data.scoreArticulation >= 0 && data.scoreArticulation <= 100)) &&
+             (!('scoreTone' in data) || (data.scoreTone is int && data.scoreTone >= 0 && data.scoreTone <= 100)) &&
+             (!('scoreImprovisation' in data) || (data.scoreImprovisation is int && data.scoreImprovisation >= 0 && data.scoreImprovisation <= 100)) &&
+             (!('scoreInsight' in data) || (data.scoreInsight is int && data.scoreInsight >= 0 && data.scoreInsight <= 100)) &&
+             (!('feedbackSummary' in data) || (data.feedbackSummary is string && data.feedbackSummary.size() <= 2000)) &&
+             (!('feedbackStrengths' in data) || (data.feedbackStrengths is list && data.feedbackStrengths.size() <= 20 && (data.feedbackStrengths.size() == 0 || data.feedbackStrengths[0] is string))) &&
+             (!('feedbackImprovements' in data) || (data.feedbackImprovements is list && data.feedbackImprovements.size() <= 20 && (data.feedbackImprovements.size() == 0 || data.feedbackImprovements[0] is string)));
+    }
+
+    function isValidSavedTopic(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 500 &&
+             data.category is string && data.category.size() >= 1 && data.category.size() <= 100 &&
+             (!('quote' in data) || (data.quote is string && data.quote.size() <= 1000));
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+      allow list: if false;
+
+      allow create: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       isValidId(userId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'email', 'createdAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'email', 'createdAt', 'totalPractices']) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       isValidId(userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'email', 'totalPractices']) &&
+                       isValidUserProfile(incoming());
+
+      allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+
+      match /practices/{practiceId} {
+        allow get: if isSignedIn() && request.auth.uid == userId && isValidId(practiceId);
+        allow list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         isValidId(practiceId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         incoming().keys().hasAll(['userId', 'topicTitle', 'category', 'durationSeconds', 'transcript', 'overallScore', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'topicTitle', 'category', 'durationSeconds', 'transcript', 'overallScore', 'scoreLanguage', 'scoreArticulation', 'scoreTone', 'scoreImprovisation', 'scoreInsight', 'feedbackSummary', 'feedbackStrengths', 'feedbackImprovements', 'createdAt']) &&
+                         isValidPracticeSession(incoming());
+
+        allow update: if false;
+        allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(practiceId);
+      }
+
+      match /saved_topics/{topicId} {
+        allow get: if isSignedIn() && request.auth.uid == userId && isValidId(topicId);
+        allow list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         isValidId(topicId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         incoming().keys().hasAll(['userId', 'title', 'category', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'category', 'quote', 'createdAt']) &&
+                         isValidSavedTopic(incoming());
+
+        allow update: if false;
+        allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(topicId);
+      }
+    }
+  }
+}

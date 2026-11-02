@@ -1,0 +1,6 @@
+{
+  "name": "SAKA SPEAK",
+  "description": "Aplikasi latihan public speaking & speech trainer dengan topik kurasi dan dinamis, panduan sudut pandang, speech timer, perekam suara, dan evaluasi mandiri.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
